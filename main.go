@@ -91,6 +91,19 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 	}
 }
 
+func printReport(pages map[string]int, baseURL string) {
+	fmt.Printf(`
+=============================
+  REPORT for %s
+=============================
+`, baseURL)
+
+	reportPages := sortPages(pages)
+	for _, reportPage := range reportPages {
+		fmt.Printf("Found %v internal links to %s\n", reportPage.Count, reportPage.URL)
+	}
+}
+
 func main() {
 	start := time.Now()
 
@@ -143,10 +156,7 @@ func main() {
 
 	cfg.wg.Wait()
 
-	fmt.Printf("pages crawled: %v\n", len(cfg.pages))
-	for page, count := range cfg.pages {
-		fmt.Printf("%s: %d\n", page, count)
-	}
+	printReport(cfg.pages, baseURL.String())
 	fmt.Printf("crawl completed in %v\n", time.Since(start))
 	os.Exit(0)
 }
