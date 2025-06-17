@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
 type config struct {
 	pages              map[string]int
+	maxPages           int
 	baseURL            *url.URL
 	mu                 *sync.Mutex
 	concurrencyControl chan struct{}
@@ -29,12 +31,23 @@ func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
 	}
 }
 
+func (cfg *config) shouldCrawlPage() bool {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	return len(cfg.pages) < cfg.maxPages
+}
+
 func (cfg *config) crawlPage(rawCurrentURL string) {
 	cfg.concurrencyControl <- struct{}{}
 	defer func() {
 		<-cfg.concurrencyControl
 		cfg.wg.Done()
 	}()
+
+	if !cfg.shouldCrawlPage() {
+		return
+	}
 
 	fmt.Printf("crawling %s\n", rawCurrentURL)
 
@@ -66,9 +79,6 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	fmt.Printf("html for %s\n", normalizedCurrentURL)
-	fmt.Println(html)
-
 	urls, err := getURLsFromHTML(html, currentURL.String())
 	if err != nil {
 		fmt.Println("error getting URLs from HTML: ", err)
@@ -90,22 +100,39 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(args) > 1 {
-		fmt.Println("too many arguments provided")
-		os.Exit(1)
-	}
-
 	baseURL, err := url.Parse(args[0])
 	if err != nil {
 		fmt.Println("error parsing base URL: ", err)
 		os.Exit(1)
 	}
 
+	maxConcurrency := 3
+	maxPages := 10
+
+	if len(args) > 1 {
+		concurrencyArg, err := strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Println("error parsing max concurrency: ", err)
+			os.Exit(1)
+		}
+		maxConcurrency = concurrencyArg
+	}
+
+	if len(args) > 2 {
+		pagesArg, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("error parsing max pages: ", err)
+			os.Exit(1)
+		}
+		maxPages = pagesArg
+	}
+
 	cfg := config{
 		pages:              map[string]int{},
+		maxPages:           maxPages,
 		baseURL:            baseURL,
 		mu:                 &sync.Mutex{},
-		concurrencyControl: make(chan struct{}, 10),
+		concurrencyControl: make(chan struct{}, maxConcurrency),
 		wg:                 &sync.WaitGroup{},
 	}
 
@@ -117,6 +144,9 @@ func main() {
 	cfg.wg.Wait()
 
 	fmt.Printf("pages crawled: %v\n", len(cfg.pages))
+	for page, count := range cfg.pages {
+		fmt.Printf("%s: %d\n", page, count)
+	}
 	fmt.Printf("crawl completed in %v\n", time.Since(start))
 	os.Exit(0)
 }
