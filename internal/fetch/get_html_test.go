@@ -1,4 +1,4 @@
-package main
+package fetcher
 
 import (
 	"net/http"
@@ -65,7 +65,7 @@ func TestGetHTML(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(tc.serverResponse))
 			defer server.Close()
 
-			html, err := getHTML(server.URL)
+			html, err := GetHTML(server.URL)
 
 			if tc.expectedError {
 				if err == nil {

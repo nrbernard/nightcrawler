@@ -7,6 +7,11 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	fetch "github.com/nrbernard/nightcrawler/internal/fetch"
+	normalize "github.com/nrbernard/nightcrawler/internal/normalize"
+	parser "github.com/nrbernard/nightcrawler/internal/parse"
+	report "github.com/nrbernard/nightcrawler/internal/report"
 )
 
 type config struct {
@@ -62,7 +67,7 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	normalizedCurrentURL, err := normalizeURL(currentURL.String())
+	normalizedCurrentURL, err := normalize.NormalizeURL(currentURL.String())
 	if err != nil {
 		fmt.Println("error normalizing current URL: ", err)
 		return
@@ -73,13 +78,13 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		return
 	}
 
-	html, err := getHTML(currentURL.String())
+	html, err := fetch.GetHTML(currentURL.String())
 	if err != nil {
 		fmt.Println("error getting HTML: ", err)
 		return
 	}
 
-	urls, err := getURLsFromHTML(html, currentURL.String())
+	urls, err := parser.GetURLsFromHTML(html, currentURL.String())
 	if err != nil {
 		fmt.Println("error getting URLs from HTML: ", err)
 		return
@@ -88,19 +93,6 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 	for _, url := range urls {
 		cfg.wg.Add(1)
 		go cfg.crawlPage(url)
-	}
-}
-
-func printReport(pages map[string]int, baseURL string) {
-	fmt.Printf(`
-=============================
-  REPORT for %s
-=============================
-`, baseURL)
-
-	reportPages := sortPages(pages)
-	for _, reportPage := range reportPages {
-		fmt.Printf("Found %v internal links to %s\n", reportPage.Count, reportPage.URL)
 	}
 }
 
@@ -156,7 +148,7 @@ func main() {
 
 	cfg.wg.Wait()
 
-	printReport(cfg.pages, baseURL.String())
+	report.PrintReport(cfg.pages, baseURL.String())
 	fmt.Printf("crawl completed in %v\n", time.Since(start))
 	os.Exit(0)
 }

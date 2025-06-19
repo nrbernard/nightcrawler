@@ -1,4 +1,4 @@
-package main
+package normalizer
 
 import (
 	"net/url"
@@ -8,7 +8,7 @@ import (
 
 var multiSlashRegex = regexp.MustCompile(`/+`)
 
-func normalizeURL(rawURL string) (string, error) {
+func NormalizeURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err

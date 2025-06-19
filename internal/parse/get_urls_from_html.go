@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"net/url"
@@ -7,7 +7,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
+func GetURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
 	reader := strings.NewReader(htmlBody)
 	rootNode, err := html.Parse(reader)
 	if err != nil {
