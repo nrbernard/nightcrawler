@@ -1,4 +1,4 @@
-package fetcher
+package fetch
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func GetHTML(rawURL string) (string, error) {
+func FetchHTML(rawURL string) (string, error) {
 	res, err := http.Get(rawURL)
 	if err != nil {
 		return "", err

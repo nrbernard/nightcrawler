@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"sync"
 
-	fetcher "github.com/nrbernard/nightcrawler/internal/fetch"
-	normalizer "github.com/nrbernard/nightcrawler/internal/normalize"
-	parser "github.com/nrbernard/nightcrawler/internal/parse"
+	fetch "github.com/nrbernard/nightcrawler/internal/fetch"
+	normalize "github.com/nrbernard/nightcrawler/internal/normalize"
+	parse "github.com/nrbernard/nightcrawler/internal/parse"
 )
 
 type Config struct {
@@ -82,7 +82,7 @@ func (cfg *Config) CrawlPage(rawCurrentURL string) {
 		return
 	}
 
-	normalizedCurrentURL, err := normalizer.NormalizeURL(currentURL.String())
+	normalizedCurrentURL, err := normalize.NormalizeURL(currentURL.String())
 	if err != nil {
 		fmt.Println("error normalizing current URL: ", err)
 		return
@@ -93,13 +93,13 @@ func (cfg *Config) CrawlPage(rawCurrentURL string) {
 		return
 	}
 
-	html, err := fetcher.GetHTML(currentURL.String())
+	html, err := fetch.FetchHTML(currentURL.String())
 	if err != nil {
 		fmt.Println("error getting HTML: ", err)
 		return
 	}
 
-	urls, err := parser.GetURLsFromHTML(html, currentURL.String())
+	urls, err := parse.ParseHTML(html, currentURL.String())
 	if err != nil {
 		fmt.Println("error getting URLs from HTML: ", err)
 		return
